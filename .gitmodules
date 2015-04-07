@@ -1,0 +1,3 @@
+[submodule "smartplot"]
+	path = smartplot
+	url = https://github.com/nfejes/smartplot
