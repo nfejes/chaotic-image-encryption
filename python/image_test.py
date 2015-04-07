@@ -10,11 +10,8 @@ im = imread('../image.jpg')
 im = im[::2,::2,0]
 shape = im.shape
 
-# Show
-imshow(im)
-
 # Key
-key = {'a':3.9,'n':10,'r':4}
+key = {'a':3.9,'n':10,'r':7}
 
 # Encrypt
 print('Encrypting image (pisarchik)...')
@@ -24,12 +21,19 @@ enc_im = ce.encrypt(im,key,'pisarchik')
 print('Decrypting image (pisarchik)...')
 #dec_im = ce.decrypt(enc_im,key,'pisarchik')
 dec_im = ce.pisarchik.decrypt_real(enc_im.reshape(-1),key).reshape(shape)
-imshow(dec_im)
 
 # Diff
 A_im = ce.pisarchik.DA(im,key['a'])
-imshow(A_im - dec_im)
 print('Max diff:',np.max(np.abs(A_im - dec_im)))
+
+# Show
+diff = (A_im - dec_im)
+diff_im = np.array((diff - np.min(diff)) / (np.max(diff) - np.min(diff))*255.99, dtype='uint8')
+imshow(np.concatenate(
+	[np.concatenate((im,ce.pisarchik.AD(enc_im,key['a'])),1),
+	 np.concatenate((ce.pisarchik.AD(dec_im,key['a']),diff_im),1)]
+,0))
+
 
 
 
