@@ -1,10 +1,17 @@
 import numpy as np
 
+
 def x_range(a):
+	"""
+	Get the valid x range (x_min,x_max) for the given [a] parameter.
+	"""
 	return (4 * a**2 - a**3) / 16, a / 4
 
+
 def __test_key(key):
-	# Ensure valid key
+	"""
+	Assert that the given key is valid.
+	"""
 	if not isinstance(key,dict) or set(key) != set(['a','n','r']):
 		raise ValueError("Expected key to be dict with 'a','n', and 'r'")
 
@@ -103,18 +110,20 @@ def encrypt(im,key):
 	# Ensure valid key
 	__test_key(key)
 
-	# Convert 2D to 1D
-	shape = im.shape
-	x = DA(im.reshape(-1),key['a'])
+	# Recode to floating point
+	enc = DA(im,key['a'])
 
 	# Encrypt
-	y = encrypt_real(x,key)
+	if len(im.shape) == 3:
+		# Colors?
+		for i in range(3):
+			encrypt_float(enc[:,:,i],key)
+	else:
+		encrypt_float(enc,key)
+	return enc
 
-	# Return reshaped image
-	return y.reshape(shape)
 
-
-def encrypt_real(im,key):
+def encrypt_float(msg,key):
 	# Ensure valid key
 	__test_key(key)
 
@@ -125,50 +134,36 @@ def encrypt_real(im,key):
 	x_min,x_max = x_range(a)
 	fn = lambda x: logistic_map(x,a,n)
 
-	# Allocate array
-	y = im.copy()
+	# Flatten image
+	y = msg.flat
 
 	# Iteration loop
 	for j in range(r):
-		# First step
-		y[0] = A(fn(y[-1]) + y[0], x_min, x_max)
 		# Pixel loop
-		for i in range(1,len(im)):
-
-			fny = fn(y[i-1])
-			t = fny + y[i]
-			print('A:',(t - fny) - y[i])
-			while (t - fny) < y[i]:
-				t = np.nextafter(t,np.inf)
-				print('B:',(t - fny) - y[i])
-			while (t - fny) > y[i]:
-				t = np.nextafter(t,-np.inf)
-				print('C:',(t - fny) - y[i])
-
-			assert t - fny == y[i]
-
-			y[i] = A(t, x_min, x_max)
-			#y[i] = A(fn(y[i-1]) + y[i], x_min, x_max)
-	
-	return y
+		for i in range(len(y)):
+			y[i] = A(fn(y[i-1]) + y[i], x_min, x_max)
 
 
 def decrypt(im,key):
 	# Ensure valid key
 	__test_key(key)
 
-	# Convert 2D to 1D
-	shape = im.shape
-	x = im.reshape(-1)
+	# Allocate copy
+	dec = im.copy()
 
 	# Decrypt
-	y = decrypt_real(x,key)
+	if len(im.shape) == 3:
+		# Colors?
+		for i in range(3):
+			decrypt_float(dec[:,:,i],key)
+	else:
+		decrypt_float(dec,key)
 
-	# Return reshaped image
-	return AD(y,key['a']).reshape(shape)
+	# Return uint8 image
+	return AD(dec,key['a'])
 
 
-def decrypt_real(x,key):
+def decrypt_float(msg,key):
 	# Ensure valid key
 	__test_key(key)
 
@@ -180,15 +175,11 @@ def decrypt_real(x,key):
 	fn = lambda x: logistic_map(x,a,n)
 
 	# Work arrays (current and previous)
-	y = x.copy()
+	y = msg.flat
 
 	# Iteration loop
 	for j in range(r):
 		# Reverse pixel loop
-		for i in range(len(x)-1,0,-1):
+		for i in range(len(y)-1,-1,-1):
 			y[i] = B(y[i] - fn(y[i-1]), x_min, x_max)
-		# Final step
-		y[0] = B(y[0] - fn(y[-1]), x_min, x_max)
-	
-	return y
 
