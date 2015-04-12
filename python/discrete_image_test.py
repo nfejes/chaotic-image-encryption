@@ -14,7 +14,7 @@ im = im[::2,::2,0]
 shape = im.shape
 
 # Key
-key = {'a':3.8,'n':100,'r':5,'bits':32}
+key = {'a':3.8,'n':10,'r':3,'bits':8}
 
 # Encrypt
 print('Encrypting image (discrete pisarchik)...')

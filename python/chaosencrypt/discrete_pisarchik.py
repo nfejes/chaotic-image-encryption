@@ -27,8 +27,10 @@ def bitreduce(A):
 	# Find invalid numbers
 	mask = (1 << (bits-8)) - 1
 	#assert ( np.sum((A & mask) != 0) + np.sum((A >> bits) != 0) ) == 0
-	if ( np.sum((A & mask) != 0) + np.sum((A >> bits) != 0) ) > 0:
-		print('Warning: invalid:', np.sum((A & mask) != 0) , np.sum((A >> bits) != 0))
+	#if ( np.sum((A & mask) != 0) + np.sum((A >> bits) != 0) ) > 0:
+	#	print('Warning: invalid:', np.sum((A & mask) != 0) , np.sum((A >> bits) != 0))
+	if np.sum((A & mask) != 0) > 0:
+		print('Warning: invalid:', np.sum((A & mask) != 0))
 
 	# Convert
 	return np.right_shift(A,bits-8,np.empty(A.shape,dtype='uint8'))
@@ -68,9 +70,11 @@ def A(u,bits):
 	A(u,bits)
 	Map too large values into attractor.
 	"""
-	mask = np.uint64((1 << bits) - 1)
-	print(type(bits),type(mask),type(u))
-	return u & mask
+	#mask = np.uint64((1 << bits) - 1)
+	#mask = ((1 << bits) - 1)
+	#print(type(bits),type(mask),type(u))
+	#return u & mask
+	return u & ((1 << bits) - 1)
 
 
 def B(u,bits):
@@ -78,9 +82,9 @@ def B(u,bits):
 	B(u,bits)
 	Map too small values into attractor.
 	"""
-	mask = np.uint64((1 << bits) - 1)
-	print(type(bits),type(mask),type(u))
-	return u & mask
+	#mask = ((1 << bits) - 1)
+	#print(type(bits),type(mask),type(u))
+	return u & ((1 << bits) - 1)
 
 
 def __test_key(key):
@@ -129,7 +133,9 @@ def generate_fn(a,n,bits):
 		for _ in range(n):
 			x = a * x * (1 - x)
 		assert 0 <= x <= 1
-		return int(np.around((u - x_min) * k))
+		#print("u:", u, "x_min:", x_min, "k:", k)
+		#print("0x%X" % int(np.around((x - x_min) * k)))
+		return int(np.around((x - x_min) * k))
 	return fn
 		
 
@@ -155,9 +161,9 @@ def encrypt_message(msg,key):
 		# note: when i == 0, then y[i] = int(fn(y[-1])) + y[0]
 		for i in range(len(y)):
 			y0 = y[i]
-			v = fn(y[i-1]) + y[i]
+			v = fn(y[i-1]) + int(y[i])
 			y[i] = A(v, bits)
-			assert y0 == B(y[i] - fn(y[i-1]), bits)
+			assert y0 == B(int(y[i]) - fn(y[i-1]), bits)
 
 
 
@@ -177,5 +183,5 @@ def decrypt_message(msg,key):
 		# Pixel loop (reverse)
 		# note: when i == 0, then y[i] = B(y[0] - int(fn(y[-1])), bits)
 		for i in range(len(y)-1,-1,-1):
-			y[i] = B(y[i] - fn(y[i-1]), bits)
+			y[i] = B(int(y[i]) - fn(y[i-1]), bits)
 
